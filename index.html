@@ -50,8 +50,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .mp span{color:var(--accent);font-weight:600;}
 
 /* TAB NAV */
-.tnav{display:flex;gap:0;margin:14px 0 16px;background:var(--c800);border:1px solid var(--bdr);border-radius:var(--rm);padding:4px;width:fit-content;transition:background .35s;}
-.tbb{display:flex;align-items:center;gap:7px;padding:8px 20px;border-radius:7px;cursor:pointer;font-family:var(--fb);font-size:12px;font-weight:500;color:var(--tm);background:transparent;border:none;transition:background var(--tr),color var(--tr);white-space:nowrap;}
+.tnav{display:flex;flex-wrap:wrap;gap:4px;margin:14px 0 16px;background:var(--c800);border:1px solid var(--bdr);border-radius:var(--rm);padding:6px;width:100%;transition:background .35s;}
+.tbb{display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:7px;cursor:pointer;font-family:var(--fb);font-size:11px;font-weight:500;color:var(--tm);background:transparent;border:none;transition:background var(--tr),color var(--tr);white-space:nowrap;}
 .tbb.active{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(249,115,22,.3);}
 .tbb:not(.active):hover{background:var(--c600);color:var(--tp);}
 
@@ -257,7 +257,9 @@ input[type=range].gt::-webkit-slider-thumb{background:var(--green);box-shadow:0 
   <button class="tbb" onclick="sw('twcs')" id="btn-twcs"><span>🏗️</span> Cash Strategy</button>
   <button class="tbb" onclick="sw('t2')" id="btn-t2"><span>💰</span> OPM & Cost Analysis</button>
   <button class="tbb" onclick="sw('t3')" id="btn-t3"><span>📉</span> Apollo Margin Simulator</button>
+  <button class="tbb" onclick="sw('tinv')" id="btn-tinv"><span>📦</span> Inventory · ERRC</button>
   <button class="tbb" onclick="sw('terrc')" id="btn-terrc"><span>⚡</span> OPM · ERRC Strategy</button>
+  <button class="tbb" onclick="sw('tceat')" id="btn-tceat"><span>🏭</span> CEAT DP Analysis</button>
 </nav>
 
 <!-- ══════════════════════════════════════════════════════════ -->
@@ -3923,7 +3925,7 @@ function switchTab(pane){
   document.querySelectorAll('.tn-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('pane-'+pane).classList.add('active');
   document.querySelector('.tn-btn[data-pane="'+pane+'"]').classList.add('active');
-  document.querySelector('.tab-nav').scrollIntoView({behavior:'smooth',block:'nearest'});
+  var tn=document.querySelector('#terrc-wrap .tab-nav');if(tn)tn.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 </script>
 </div>
@@ -3939,6 +3941,187 @@ function switchTab(pane){
 </script>
 </div>
 <!-- END TAB TERRC ════════════════════════════════════════════ -->
+
+
+<!-- TAB TINV ═══════════════════════════════════════════════ -->
+<div class="tp" id="tinv">
+<style>
+.tinv-wrap{font-family:var(--fb);color:var(--tp);}
+.tinv-subtab-nav{display:flex;gap:0;margin-bottom:20px;background:var(--c800);border:1px solid var(--bdr);border-radius:var(--rm);padding:4px;flex-wrap:wrap;}
+.tinv-stb{background:none;border:none;cursor:pointer;padding:7px 16px;border-radius:7px;font-family:var(--fb);font-size:12px;font-weight:500;color:var(--tm);transition:all .2s;}
+.tinv-stb.active{background:var(--accent);color:#fff;}
+.tinv-stb:not(.active):hover{background:var(--c600);color:var(--tp);}
+.tinv-pane{display:none;}.tinv-pane.active{display:block;}
+
+/* TABLE */
+.tinv-tbl-wrap{overflow-x:auto;}
+.tinv-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tinv-tbl th{padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;border-bottom:2px solid var(--bdr);color:var(--tm);background:var(--c700);white-space:nowrap;}
+.tinv-tbl td{padding:9px 12px;border-bottom:1px solid var(--bdr);vertical-align:top;line-height:1.6;font-size:12px;color:var(--ts);}
+.tinv-tbl tr:hover td{background:rgba(255,255,255,.02);}
+.tinv-tbl td strong{color:var(--tp);}
+.tinv-tbl td:first-child{color:var(--tp);font-weight:600;min-width:180px;}
+.pill{display:inline-block;border-radius:100px;padding:2px 9px;font-size:10px;font-weight:700;white-space:nowrap;}
+.pill-e{background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.3);}
+.pill-r{background:rgba(249,115,22,.12);color:#f97316;border:1px solid rgba(249,115,22,.3);}
+.pill-r2{background:rgba(34,197,94,.12);color:#22c55e;border:1px solid rgba(34,197,94,.3);}
+.pill-c{background:rgba(139,92,246,.12);color:#8b5cf6;border:1px solid rgba(139,92,246,.3);}
+.pill-pcr{background:rgba(59,130,246,.1);color:#3b82f6;border:1px solid rgba(59,130,246,.25);}
+.pill-tbr{background:rgba(234,179,8,.1);color:#eab308;border:1px solid rgba(234,179,8,.25);}
+.pill-oht{background:rgba(6,182,212,.1);color:#06b6d4;border:1px solid rgba(6,182,212,.25);}
+.wc-val{font-family:var(--fh);font-size:15px;font-weight:700;color:#22c55e;}
+.inv-val{font-family:var(--fh);font-size:13px;font-weight:700;color:#f97316;}
+.tinv-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+.tinv-kpi{background:var(--c800);border:1px solid var(--bdr);border-radius:var(--rm);padding:14px 16px;position:relative;overflow:hidden;}
+.tinv-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.tinv-kpi .kl{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:var(--tm);margin-bottom:5px;}
+.tinv-kpi .kv{font-family:var(--fh);font-size:22px;font-weight:700;line-height:1;}
+.tinv-kpi .ks2{font-size:11px;color:var(--tm);margin-top:3px;}
+</style>
+<div class="tinv-wrap">
+  <div class="sr mb24" style="margin-bottom:6px;"><span class="sc">Inventory</span><span class="st">Inventory ERRC — Strategic Working Capital Unlock</span></div>
+  <p class="ss" style="margin-bottom:18px;">12 targeted projects across PCR/SUV · TBR · OHT segments · Eliminate · Reduce · Raise · Create framework</p>
+
+  <!-- KPIs -->
+  <div class="tinv-kpi-row">
+    <div class="tinv-kpi" style="--kc:#22c55e"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#22c55e;"></div><div class="kl">Total WC Unlocked</div><div class="kv" style="color:#22c55e;">₹2,131 Cr</div><div class="ks2">Across all 12 projects</div></div>
+    <div class="tinv-kpi"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#3b82f6;"></div><div class="kl">PCR / SUV Projects</div><div class="kv" style="color:#3b82f6;">4</div><div class="ks2">₹966 Cr WC released</div></div>
+    <div class="tinv-kpi"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#eab308;"></div><div class="kl">TBR Projects</div><div class="kv" style="color:#eab308;">4</div><div class="ks2">₹580 Cr WC released</div></div>
+    <div class="tinv-kpi"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#06b6d4;"></div><div class="kl">OHT Projects</div><div class="kv" style="color:#06b6d4;">4</div><div class="ks2">₹540 Cr WC released</div></div>
+    <div class="tinv-kpi"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:#ef4444;"></div><div class="kl">Total Investment</div><div class="kv" style="color:#ef4444;">₹26–40 Cr</div><div class="ks2">Across all 12 projects</div></div>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div class="tinv-pane active" id="tinv-p1">
+    <p style="font-size:13px;color:var(--ts);margin-bottom:14px;line-height:1.7;">For more detail about this project — <a href="https://apolloinventoryanalysis.netlify.app/" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:none;border-bottom:1px solid rgba(249,115,22,.4);padding-bottom:1px;">Apollo Tyres — Value Innovation for Inventory ↗</a></p>
+    <div class="card tinv-tbl-wrap">
+      <table class="tinv-tbl">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Segment</th>
+            <th>ERRC Pillar</th>
+            <th>WC Unlocked</th>
+            <th>Performance Metric</th>
+            <th>Core Impact</th>
+            <th>Investment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>P1</strong> Global Mixer Velocity Standardization &amp; PLC Optimization</td><td><span class="pill pill-pcr">PCR/SUV</span></td><td><span class="pill pill-e">❌ Eliminate</span></td><td><span class="wc-val">₹546 Cr</span></td><td><span class="inv-val">+10–12%</span> Capacity Uplift (compounding)</td><td>Standardizes speed across 45 global mixers via PLC code updates, removing compound supply variations and floor backups</td><td>₹1.80–2.50 Cr</td></tr>
+          <tr><td><strong>P2</strong> Dual-Hub Single-Pass Mixing for Soft SUV Compounds</td><td><span class="pill pill-pcr">PCR/SUV</span></td><td><span class="pill pill-r">📉 Reduce</span></td><td><span class="wc-val">₹320 Cr</span></td><td><span class="inv-val">−15%</span> Compound cycle time compression</td><td>Single Pass Mixing at tandem mixers drops masterbatches directly into final bowls, eliminating floor cooling and staging delays</td><td>₹2.50–3.50 Cr</td></tr>
+          <tr><td><strong>P3</strong> UUHP Mold Grouping &amp; Changeover Simplification</td><td><span class="pill pill-pcr">PCR/SUV</span></td><td><span class="pill pill-r">📉 Reduce</span></td><td><span class="wc-val">₹45 Cr</span></td><td><span class="inv-val">−30%</span> Curing press changeover setup times</td><td>Groups premium 14–17+ inch and UUHP patterns into 48-hour continuous runs, cutting ad-hoc mold setting adjustments</td><td>₹1.50–2.20 Cr</td></tr>
+          <tr><td><strong>P4</strong> Smart-Cure Thermal Sensor Deployment on Compact Containers</td><td><span class="pill pill-pcr">PCR/SUV</span></td><td><span class="pill pill-c">✨ Create</span></td><td><span class="wc-val">₹55 Cr</span></td><td><span class="inv-val">+10–15%</span> Productive output uplift from existing PCR equipment</td><td>Retrofits infrared sensors inside compact container molds, connected to AI Digital Twin to replace fixed timers with active cure termination</td><td>₹4.70–6.50 Cr</td></tr>
+          <tr><td><strong>P5</strong> Decoupled Factory Production &amp; Replacement Market Pull-Matching</td><td><span class="pill pill-tbr">TBR</span></td><td><span class="pill pill-e">❌ Eliminate</span></td><td><span class="wc-val">₹120 Cr</span></td><td><span class="inv-val">−25%</span> Finished commercial tyre warehouse inventory</td><td>Removes volatile Truck OEM forward projections from master schedule, moving OEM runs to build-to-order while matching to aftermarket dealer networks</td><td>₹1.50–2.50 Cr</td></tr>
+          <tr><td><strong>P6</strong> Aftermarket Capacity Redirection for Rapid Cash Conversion</td><td><span class="pill pill-tbr">TBR</span></td><td><span class="pill pill-r2">📈 Raise</span></td><td><span class="wc-val">₹180 Cr</span></td><td><span class="inv-val">−9 Days</span> Finished commercial cash conversion cycle</td><td>Pivots curing press configurations away from negative-growth truck OEM contracts into the 18-day collection cycle replacement market</td><td>₹1.00–1.80 Cr</td></tr>
+          <tr><td><strong>P7</strong> Vulcanization Press Dynamic Drain-Time Controls</td><td><span class="pill pill-tbr">TBR</span></td><td><span class="pill pill-r">📉 Reduce</span></td><td><span class="wc-val">₹35 Cr</span></td><td><span class="inv-val">−85%</span> Top-mold stick-up adhesion incidents</td><td>Sensor-driven venting profiles and dynamic fluid drain-times at commercial press runs, preventing sticky-traps and bladder ring tearing</td><td>₹2.00–2.80 Cr</td></tr>
+          <tr><td><strong>P8</strong> Singapore Hub Index-Linked Sourcing Contract Split</td><td><span class="pill pill-tbr">TBR</span></td><td><span class="pill pill-r2">📈 Raise</span></td><td><span class="wc-val">₹245 Cr</span></td><td>P&amp;L Accounting Lag <span class="inv-val">90d → 30d</span></td><td>Splits NR procurement contracts at Singapore hub — 40% shifted to rolling monthly index-linked pricing to cushion against price peaks</td><td>₹1.00–1.50 Cr</td></tr>
+          <tr><td><strong>P9</strong> Low-Turn European OHT &amp; Space Master SKU Production Freeze</td><td><span class="pill pill-oht">OHT</span></td><td><span class="pill pill-e">❌ Eliminate</span></td><td><span class="wc-val">₹150 Cr</span></td><td><span class="inv-val">−30%</span> Farm sector finished stock value within 90 days</td><td>Freezes manufacturing on 18 underperforming European agricultural sizes and domestic farm variations, stopping capital drainage during rural downturns</td><td>₹0.50–1.00 Cr</td></tr>
+          <tr><td><strong>P10</strong> Shared Mixer Compound Re-Allocation to Premium SUV Lines</td><td><span class="pill pill-oht">OHT</span> <span class="pill pill-pcr">PCR</span></td><td><span class="pill pill-r2">📈 Raise</span></td><td><span class="wc-val">₹260 Cr</span></td><td><span class="inv-val">+180 bps</span> Gross margin expansion on redirected lines</td><td>Breaks rigid quarterly volume quotas on shared assets, dynamically shifting mixing chamber capacity from slow agri rubber to high-margin SUV lines</td><td>₹1.50–2.00 Cr</td></tr>
+          <tr><td><strong>P11</strong> Hungary Warehouse Floor Space Strain Real-Time Tracking</td><td><span class="pill pill-oht">OHT</span></td><td><span class="pill pill-c">✨ Create</span></td><td><span class="wc-val">₹45 Cr</span></td><td>Plant warehouse space maintained <span class="inv-val">&lt;82%</span> capacity</td><td>Installs volumetric laser cubing sensors at Hungary facility (90% utilized), interlocking space alerts to automatically slow upstream lines</td><td>₹3.50–5.00 Cr</td></tr>
+          <tr><td><strong>P12</strong> ISO 20400 Virtual Gemba Compliance Audit Acceleration</td><td><span class="pill pill-oht">OHT</span></td><td><span class="pill pill-c">✨ Create</span></td><td><span class="wc-val">₹85 Cr</span></td><td>Supplier onboarding <span class="inv-val">45d → 11d</span> (−75%)</td><td>Deploys encrypted virtual video Gemba streaming to audit alternative NR suppliers, expanding vendor registry under ISO 20400 standards</td><td>₹1.00–2.00 Cr</td></tr>
+        </tbody>
+        <tfoot>
+          <tr style="background:rgba(34,197,94,.05);font-weight:700;">
+            <td colspan="3" style="color:var(--tp);font-weight:700;">TOTAL — 12 Projects</td>
+            <td><span class="wc-val" style="font-size:18px;">₹2,131 Cr</span></td>
+            <td colspan="2" style="color:var(--tm);font-size:11px;">Working capital unlocked across PCR/SUV · TBR · OHT segments</td>
+            <td style="color:var(--tp);">₹26–40 Cr</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function tinvTab(btn,id){
+  document.querySelectorAll('.tinv-stb').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tinv-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  var p=document.getElementById(id);if(p)p.classList.add('active');
+}
+</script>
+</div>
+
+</div>
+<!-- END TAB TINV ════════════════════════════════════════════ -->
+
+<!-- TAB TCEAT ═══════════════════════════════════════════════ -->
+<div class="tp" id="tceat">
+<style>
+.ceat-wrap{font-family:var(--fb);color:var(--tp);max-width:900px;margin:0 auto;}
+.ceat-link-bar{margin-bottom:22px;}
+.ceat-link-bar a{color:var(--accent);font-weight:600;font-size:14px;text-decoration:none;border-bottom:1px solid rgba(249,115,22,.4);padding-bottom:2px;}
+.ceat-link-bar a:hover{border-color:var(--accent);}
+.ceat-section{margin-bottom:28px;}
+.ceat-section-title{font-family:var(--fh);font-size:15px;font-weight:700;color:var(--tp);margin-bottom:12px;padding:10px 14px;background:var(--c800);border:1px solid var(--bdr);border-left:3px solid var(--accent);border-radius:var(--rs);}
+.ceat-items{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;}
+.ceat-items li{font-size:13px;line-height:1.75;color:var(--ts);padding:12px 14px;background:var(--cbg);border:1px solid var(--bdr);border-radius:var(--rs);}
+.ceat-items li strong{color:var(--tp);font-weight:600;}
+</style>
+<div class="ceat-wrap">
+  <div class="ceat-link-bar">
+    <p style="font-size:13px;color:var(--ts);margin-bottom:8px;">For more detail about this project —</p>
+    <a href="https://ceatdpanalysis.netlify.app/" target="_blank" rel="noopener">CEAT DP - Deep Insights ↗</a>
+  </div>
+
+  <div class="ceat-section">
+    <div class="ceat-section-title">1. Finance &amp; Treasury</div>
+    <ul class="ceat-items">
+      <li><strong>Consortium Architecture:</strong> Built a 13-bank consortium led by Bank of Baroda and State Bank of India to distribute credit exposure and secure heavy fund-based limits.</li>
+      <li><strong>PSL Arbitrage Engine:</strong> Routed a ₹21,615 Lakh bill discounting program through banks' mandatory Priority Sector Lending (PSL) lines, enabling suppliers to get paid within 48–72 hours at rock-bottom interest rates while CEAT held corporate cash for 122+ days.</li>
+      <li><strong>Dealer Cash Monetization:</strong> Required downstream retail dealers to place upfront safety security deposits, recycling this internal capital pool to service 25% of total interest expenses.</li>
+    </ul>
+  </div>
+
+  <div class="ceat-section">
+    <div class="ceat-section-title">2. Procurement &amp; Sourcing</div>
+    <ul class="ceat-items">
+      <li><strong>75% Localization Play:</strong> Shifted procurement away from rigid global chemical conglomerates to mid-tier domestic Indian vendors to maximize bargaining leverage over credit durations.</li>
+      <li><strong>Monopsony Clusters:</strong> Scaled rubber sourcing from marginalized Northeast Indian farming clusters to 20% of domestic needs, trading long-term buyback guarantees for non-negotiable extended payment terms via digital portals.</li>
+      <li><strong>Index-Linked Contracts:</strong> Legally pegged 60% of natural rubber agreements to the SICOM index and chemical lines to the Platts oil index, decoupling volatile commodity unit pricing from fixed credit windows.</li>
+    </ul>
+  </div>
+
+  <div class="ceat-section">
+    <div class="ceat-section-title">3. Supply Chain &amp; Logistics</div>
+    <ul class="ceat-items">
+      <li><strong>On-site Consignment Hubs:</strong> Enforced a Vendor Managed Inventory (VMI) model where suppliers hold raw materials on-site, shifting asset carrying and insurance liabilities entirely to the vendor until scanned for consumption.</li>
+      <li><strong>Maritime Freight Arbitrage:</strong> Shifted 25% of domestic rubber freight to coastal shipping routes to flatten inbound delivery delays and maintain thin, efficient warehouse safety buffers.</li>
+      <li><strong>ETA Capital Locks:</strong> Parked early import shipments in custom bonded warehouses to legally hold back the creation of trade payable entries, blocking logistics speed-ups from draining cash.</li>
+    </ul>
+  </div>
+
+  <div class="ceat-section">
+    <div class="ceat-section-title">4. Accounts Payable (AP) &amp; IT Automation</div>
+    <ul class="ceat-items">
+      <li><strong>Project "Robopayy":</strong> Deployed automated RPA and OCR bots to run a touchless three-way match (Invoice vs. PO vs. GRN), scheduling payments at the exact 132-day legal mark without human processing lag.</li>
+      <li><strong>API Tax Checks:</strong> Connected the AP ledger directly to the government's GST portal via APIs, instantly freezing payments to vendors with mismatched tax filings to protect Input Tax Credits (ITC).</li>
+      <li><strong>Digital Conditional Holds:</strong> Integrated factory laboratory quality control logs directly with the WECONNECT supplier portal, instantly pausing the payment countdown clock if an inbound batch failed technical specs.</li>
+    </ul>
+  </div>
+
+  <div class="ceat-section">
+    <div class="ceat-section-title">5. Legal &amp; Contracts</div>
+    <ul class="ceat-items">
+      <li><strong>Unilateral Volume Swings:</strong> Embedded a standard contract provision giving the company the legal right to throttle or scale monthly purchase volumes by 30% with 14 days' notice, forcing vendor compliance with payment portals.</li>
+      <li><strong>Subsidiary Ring-Fencing:</strong> Insulated the parent company's cash flow by backing specialty, slow-turning tire lines with corporate guarantees (capped at ₹22,800 Lakhs) while keeping their trade payables entirely separate.</li>
+      <li><strong>Tax Indemnity Templates:</strong> Mandated that all supplier agreements include rigorous GST indemnity clauses that legally block cash outflows the moment a vendor fails compliance checks.</li>
+    </ul>
+  </div>
+
+  <div class="ceat-section">
+    <div class="ceat-section-title">6. Supplier Relationship Management (SRM)</div>
+    <ul class="ceat-items">
+      <li><strong>Volume-for-Time Exchange:</strong> Neutralized supplier resentment over 120+ day terms by providing rolling 12-month demand forecasts, giving vendors the structural certainty needed to wipe out their own storage waste.</li>
+      <li><strong>Predictability Portals:</strong> Scaled the WECONNECT gateway to display live, unalterable banking disbursement calendars, trading short-term velocity for automated, transparent payment certainty.</li>
+      <li><strong>Pro-Rata Safety Valves:</strong> Pre-coded a relief trigger allowing vulnerable domestic vendors to draw down 30% of their invoice value early via PSL banking funds during cash crunches, preserving supply security while protecting the 70% corporate cash cushion.</li>
+    </ul>
+  </div>
+</div>
+</div>
+<!-- END TAB TCEAT ════════════════════════════════════════════ -->
 
 </body>
 </html>
